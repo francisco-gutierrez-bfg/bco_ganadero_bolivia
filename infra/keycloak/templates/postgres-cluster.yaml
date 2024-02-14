@@ -1,0 +1,75 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: keycloak-db
+  namespace: keycloak
+spec:
+  instances: {{ .Values.postgres.instances }}
+  backup:
+    retentionPolicy: "30d"
+    barmanObjectStore:
+      destinationPath: "s3://backups/keycloak-db"
+      endpointURL: http://bg-minio.minio.svc:9000
+      s3Credentials:
+        accessKeyId:
+          name: s3-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: s3-creds
+          key: ACCESS_SECRET_KEY
+      data:
+        compression: gzip
+      wal:
+        compression: gzip
+  storage:
+    size: {{ .Values.keycloak.db.size }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: backup-keycloak-db-4
+  namespace: keycloak
+spec:
+  schedule: "0 0 0 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: keycloak-db
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-creds
+  namespace: keycloak
+type: Opaque
+data:
+  ACCESS_KEY_ID: NlhsQ2NDdVdITlJlaVR1TE56Ymk=
+  ACCESS_SECRET_KEY: T21BdmtTNnJnVEdMNEpDVXVPbU16cVdsOTNMMjJqM3FWTGN0VUtCeQ==
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: keycloak-db-restore-5
+  namespace: keycloak
+spec:
+  instances: {{ .Values.postgres.instances }}
+  storage:
+    size: {{ .Values.keycloak.db.size }}
+  superuserSecret:
+    name: keycloak-db-superuser
+  bootstrap:
+    recovery:
+      source: keycloak-db
+  externalClusters:
+    - name: keycloak-db
+      barmanObjectStore:
+        destinationPath: "s3://backups/keycloak-db"
+        endpointURL: http://bg-minio.minio.svc:9000
+        s3Credentials:
+          accessKeyId:
+            name: s3-creds
+            key: ACCESS_KEY_ID
+          secretAccessKey:
+            name: s3-creds
+            key: ACCESS_SECRET_KEY
+        wal:
+          maxParallel: 8

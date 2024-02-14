@@ -1,0 +1,28 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  instances: 3
+  additionalOptions:
+    - name: hostname-strict-https
+      value: 'false'
+    - name: hostname-strict
+      value: 'false'
+    - name: proxy
+      value: edge
+    - name: http-relative-path
+      value: /keycloak
+  ingress:
+    enabled: false
+  db:
+    vendor: postgres
+    host: 'keycloak-db-rw'
+    usernameSecret:
+      name: keycloak-db-app
+      key: username
+    passwordSecret:
+      name: keycloak-db-app
+      key: password
+    database: app

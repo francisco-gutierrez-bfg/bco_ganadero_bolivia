@@ -1,0 +1,31 @@
+{{ $fullname := include "project.fullname" . }}
+{{ $labels := include "project.labels" . }}
+
+{{- if .Values.ingress.enabled -}}
+{{- if eq .Values.ingress.className "kong" -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: kong
+spec:
+  controller: ingress-controllers.konghq.com/kong
+{{- end }}
+{{- end }}
+
+{{- if .Values.kong -}}
+{{- if .Values.kong.plugins -}}
+{{- range .Values.kong.plugins }}
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ $fullname }}-{{ .name }}
+  labels:
+    {{- $labels | nindent 4 }}
+config:
+  {{- toYaml .config | nindent 2 }}
+plugin: {{ .plugin | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

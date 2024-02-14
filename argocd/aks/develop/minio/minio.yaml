@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+spec:
+  project: helm-charts
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    targetRevision: 12.10.9
+    chart: minio
+    helm:
+      releaseName: bg-minio
+      parameters:
+        - name: "persistence.enabled"
+          value: "true"
+        - name: "persistence.size"
+          value: "100Gi"
+        - name: "auth.rootUser"
+          value: "admin"
+        - name: "auth.rootPassword"
+          value: "55lzpkoc0uk0k6d3"
+        - name: "ingress.enabled"
+          value: "true"
+        - name: "ingress.ingressClassName"
+          value: "kong"
+        - name: "ingress.path"
+          value: "/"
+        - name: "ingress.hostname"
+          value: "bg-gnm-minio.eastus.cloudapp.azure.com"
+        - name: "apiIngress.enabled"
+          value: "true"
+        - name: "apiIngress.enabled"
+          value: "true"
+        - name: "apiIngress.ingressClassName"
+          value: "kong"
+        - name: "apiIngress.ingressClassName"
+          value: "kong"
+        - name: "apiIngress.hostname"
+          value: "bg-gnm-minio.eastus.cloudapp.azure.com"
+        - name: "apiIngress.path"
+          value: "/"
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: minio
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true  
+    automated:
+      prune: true
+      selfHeal: true

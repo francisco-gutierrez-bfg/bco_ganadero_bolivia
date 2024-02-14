@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "project.fullname" . }}
+  labels:
+    {{- include "project.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "project.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "project.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.securityContext }}        
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ include "project.name" . }}
+        image: {{ default "traefik/whoami" .Values.image.repository }}:{{ default "v1.6.1" .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "project.fullname" . }}
+          # - secretRef:
+          #     name: {{ include "project.fullname" . }}
+        ports:
+          - name: {{ default "http" .Values.service.portName }}
+            containerPort: {{ default "http" .Values.service.targetPort }}
+            protocol: {{ default "TCP" .Values.service.protocol | upper }}
+        {{- if .Values.health }}
+        {{- toYaml .Values.health | nindent 8 }}
+        {{- end }}
+        {{- if .Values.resources }}        
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- end }}
+        {{- with .Values.volumeMounts }}
+        volumeMounts:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- if .Values.securityContextContainer }}
+        securityContext:
+          {{- toYaml .Values.securityContextContainer | nindent 10 }}
+        {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

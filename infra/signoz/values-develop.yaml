@@ -1,0 +1,2 @@
+ingress:
+  domain: "bg-gnm-signoz.eastus.cloudapp.azure.com"  # Replace with your domain

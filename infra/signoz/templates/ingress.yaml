@@ -1,0 +1,113 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signoz-bg
+  namespace: signoz
+  annotations:
+    konghq.com/plugins: "https-port-plugin,oidc"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: kong
+  tls:
+    - hosts:
+        - {{ .Values.ingress.domain }}
+      secretName: signoz-server-tls
+  rules:
+    - host: {{ .Values.ingress.domain }}
+      http:
+        paths:
+          - path: /signoz-otel-collector
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: signoz-otel-collector
+                port:
+                  name: otlp-http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signoz-ui-bg
+  namespace: signoz
+  annotations:
+    konghq.com/plugins: "https-port-plugin"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: kong
+  tls:
+    - hosts:
+        - {{ .Values.ingress.domain }}
+      secretName: signoz-server-tls
+  rules:
+    - host: {{ .Values.ingress.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: signoz-frontend
+                port:
+                  name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: kong
+    app.kubernetes.io/name: kong
+    app.kubernetes.io/version: "3.3"
+    enable-metrics: "true"
+  name: bg-kong-kong-proxy-signoz
+  namespace: kong
+spec:
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: kong-proxy
+    port: 80
+    protocol: TCP
+    targetPort: 8000
+  - name: kong-proxy-tls
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/instance: bg-kong
+    app.kubernetes.io/name: kong
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: kong
+    app.kubernetes.io/name: kong
+    app.kubernetes.io/version: "3.3"
+    enable-metrics: "true"
+  name: bg-kong-kong-proxy-minio
+  namespace: kong
+spec:
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: kong-proxy
+    port: 80
+    protocol: TCP
+    targetPort: 8000
+  - name: kong-proxy-tls
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/instance: bg-kong
+    app.kubernetes.io/name: kong
+  type: LoadBalancer

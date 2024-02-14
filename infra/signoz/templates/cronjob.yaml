@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clickhouse-backups
+  namespace: signoz
+spec:
+  schedule: "0 0 * * 6"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: clickhouse
+            image: 'docker.io/clickhouse/clickhouse-server:23.7.3-alpine'
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: CLICKHOUSE_USERNAME
+              value: admin
+            - name: CLICKHOUSE_PASSWORD
+              value: 27ff0399-0d3a-4bd8-919d-17c2181e6fb9
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: signoz-clickhouse-operator
+                  key: username
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: signoz-clickhouse-operator
+                  key: password
+            command:
+            - /bin/sh
+            - -c
+            - NOW=$(date '+%Y-%m-%d%H:%M:%S') && clickhouse-client --host signoz-clickhouse.signoz.svc --port 9000 --user $CLICKHOUSE_USERNAME --password $CLICKHOUSE_PASSWORD --query "BACKUP ALL TO S3('http://bg-minio.minio.svc:9000/backups/signoz-$NOW', '6XlCcCuWHNReiTuLNzbi', 'OmAvkS6rgTGL4JCUuOmMzqWl93L22j3qVLctUKBy')"
+          restartPolicy: OnFailure

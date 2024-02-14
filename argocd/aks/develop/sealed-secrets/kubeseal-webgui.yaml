@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubeseal-webgui
+  namespace: argocd  # This should be the namespace where Argo CD is installed
+spec:
+  project: helm-charts  # The Argo CD project to deploy to, `default` is used here but this should be changed to your project name
+  source:
+    chart: 'kubeseal-webgui'  # The name of the chart
+    repoURL: 'https://jaydee94.github.io/kubeseal-webgui/'  # The Helm repository URL
+    targetRevision: '4.0.4'  # The version of the chart
+    helm:
+      releaseName: kubeseal-webgui
+      parameters:  # Equivalent to `values` in the Helm Release
+        - name: sealedSecrets.autoFetchCert
+          value: 'true'
+        - name: ingress.enabled
+          value: 'true'
+        - name: ingress.ingressClassName
+          value: 'kong'
+        - name: ingress.hostname
+          value: 'bg-gnm-dev.eastus.cloudapp.azure.com'
+        - name: api.url
+          value: 'https://bg-gnm-dev.eastus.cloudapp.azure.com'
+        - name: sealedSecrets.controllerName
+          value: 'sealed-secrets'
+        - name: sealedSecrets.cert
+          value: |
+            -----BEGIN CERTIFICATE-----
+            MIIEzTCCArWgAwIBAgIRAJoZ8QZvzL+Nm/4Z4Ctp7lEwDQYJKoZIhvcNAQELBQAw
+            ADAeFw0yMzEyMTMxNTE1MjVaFw0zMzEyMTAxNTE1MjVaMAAwggIiMA0GCSqGSIb3
+            DQEBAQUAA4ICDwAwggIKAoICAQCxgu8L5dXZ9SaejZFQyzab328EejZBApBVLNOg
+            ONmhyIq8Q89PrRJThgjCPy01/JwcoGG9aZ1RTtfsJnz3fKmHWplmw3YlIJIJlTt7
+            Xc8QbM9wcEWRD+xnrSSf+o1WUQkjtws5WdUeHEcfPU2PTcONzYjPKmdtAzQ96cZm
+            6nJOPa0x0enDzzaD+1RmBTiqbagCvkH5BQcbsHz7+fJN8HkSlxdO6IQCSu3aKfeb
+            zU4o+jJbLjvdulJPVMBcOB4j7/qOXk4HrYdLaAhgB12w0ewvDyQSWyeHfDWFIE9W
+            hw9f9Zm4IzJip6t6tugx/5kkc/EA10jt7znWZgc1vzWPWeNg2wqnTfRYf82NTz5l
+            iRkxQAAQ+r7TnIjSQdxCzW5bAiIekotqH27W0+j+ZKnb9CMERU2hmUICNxzc4nmT
+            M1RhnMjRQg75fptAn3AokXEo1hH9K/eGL1Py1dO0A2Td359zrFU7yxuZx52AdXfh
+            uu870jcVskgsk9joJFkGsnDMS87S7Hidok3dqShGjKoOkLXqCSC0Tzcqo15+BPmK
+            54cnu8Exe55/xRo0gJBAezQv0AqoWvJ2uD368XXFjWD6v2MDjkafjkUHSdKjvR6l
+            nYnZOLXIMMVCbIxHz3W2PDLdRboHBjdsuoqby39hRcG4O6wLcgXagvbEDVucXSZh
+            c4vtfQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAAEwDwYDVR0TAQH/BAUwAwEB/zAd
+            BgNVHQ4EFgQUlHOM+rn0cTisw40YqV9Avbs9DdkwDQYJKoZIhvcNAQELBQADggIB
+            ABu4qK9AUWcZE1AA+ex/LBlDRR1laKgtpvCi0XOHuCwRA5yOL1CX8s3IpnhT0PZY
+            f0CnsbK1aZy6oCyxbKk7EPGAkEGkzLuw9dm9Jofgqa+2dopPxNiVt5PBhHwxt81X
+            hdK1VY8SqbHzctpeMlVsS8LhwPfbuimErhdQZuJ83sPSupy98y51ihCc9RQM4u3x
+            t4/oaXxC0ct9Bh7WvGpTrQihdvQktSPT8bjSwVearFLgr9leA5+gTPQPmomnSR7v
+            n2WgMruRfwpvwx+TyxJJ6f6jjc9+dFrh1TWs1y14kbPudPQHvXaw48HCR7LY9GFF
+            lMNhdS8IQKJiSbp28Jrmy0ifFSwF5tXgHVJ6F8J48bhl43eC5wZxPzvoskERuKaY
+            Sm9VA0YmlYWs+PV5FN2O1cREM+gBej82x9ajjkvXwHBbwFfnH0arAakPOhvEcbhJ
+            v6wiRglEY0y3f7dRwlXFfajFV71ImFTQLI6TO0tCGh7odu5PghjmUpbpqJ/gNf41
+            Tebld8vsdXjNuwvy+a8qjneHtFeGPqDivyeVykue5AMWNnGYpRSAkQqAC1CCSEmU
+            lMO+PGGV25JdZKfjDGRdNRodveV4wYK6ww3YZuSgguUm8iYrwb0WMJi41EZotqoq
+            pc+pZIW/YnSUozfL7OqEe9cLHr52YYu1We512QjiGYrX
+            -----END CERTIFICATE-----
+  destination:
+    namespace: kube-system  # The target namespace for deployment
+    server: 'https://kubernetes.default.svc'  # Your cluster API URL; change it if you're not deploying to the default cluster
+  syncPolicy:
+    automated:  # This section can be adjusted to your CI/CD preferences
+      prune: true  # This will delete resources that are no longer defined in the Helm chart
+      selfHeal: true  # This will attempt to fix discrepancies between the desired state in Git and the live state in the cluster
+    syncOptions:  # Sync options can be used for various sync behaviors
+      - CreateNamespace=true  # This tells Argo CD to create the namespace if it does not exist

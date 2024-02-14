@@ -1,0 +1,121 @@
+# fullnameOverride: ganamovil-bff
+nameOverride: ganamovil-bff
+environment: develop
+team: ganamovil
+replicaCount: 1
+image:
+  pullPolicy: IfNotPresent
+  repository: bancoganadero/ganamovil-bff
+  tag: 25971.develop
+imagePullSecrets:
+  - name: dockerhublogin
+securityContext: {}
+# runAsNonRoot: true
+# runAsUser: 1000 # MustRunAsNonRoot | 1000
+securityContextContainer: {}
+# allowPrivilegeEscalation: false # established values: nil | true | false
+# readOnlyRootFilesystem: true
+# capabilities:
+#   drop:
+#   - ALL
+
+# health:
+#   livenessProbe:
+#     httpGet:
+#       path: /
+#       port: "http" # Mismo nombre que .service.portName
+#   readinessProbe:
+#     httpGet:
+#       path: /
+#       port: "http" # Mismo nombre que .service.portName
+
+# resources:
+#   limits:
+#     cpu: 100m
+#     memory: 128Mi
+#   requests:
+#     cpu: 100m
+#     memory: 128Mi
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetMemoryUtilizationPercentage: 90
+  targetCPUUtilizationPercentage: 90
+  behavior:
+    scaleDown:
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+        - type: Percent
+          value: 10
+          periodSeconds: 15
+      selectPolicy: Min
+    scaleUp:
+      policies:
+        - periodSeconds: 15
+          type: Pods
+          value: 2
+        - periodSeconds: 15
+          type: Percent
+          value: 100
+      selectPolicy: Max
+      stabilizationWindowSeconds: 0
+nodeSelector: {}
+tolerations: []
+affinity: {}
+service:
+  portName: http
+  type: ClusterIP # ClusterIP | NodePort | LoadBalancer
+  protocol: TCP
+  port: 8080
+  targetPort: 8080
+  # nodePort: 30001 # default: ( 30000 - 32767 )
+# volumes:
+#   - name: appsettings
+#     secret:
+#       secretName: ganamovil-bff
+
+# volumeMounts:
+#   - name: appsettings
+#     mountPath: /app/appsettings.json
+#     subPath: appsettings.json
+configmap: 
+  SERVER_SERVLET_CONTEXT_PATH: /ganamovil-bff/
+  API_MIDDLEWARE: http://k8s-middlewa-ingressm-5a8280b357-1669360449.us-east-1.elb.amazonaws.com
+  CLIENT_SECRET_ACCOUNTS: Mh9h5mkr+F/61nnmwhRhBl7qx1ZDl24ubwogHYKLqyYYH+NwWbziOvHIcEpRKCEVN+d4sJel9pW5ZmzvG+9r3gGlKRw0V+bI91MdffNYKpxC+RmuHI4FZW/WeewmGC+VPn661e3h+s4=
+  # HOSTNAME: bg-gnm-dev.eastus.cloudapp.azure.com
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: TRACE
+# ENV_VAR: "configmap"
+
+sealed:
+  # scope: "cluster-wide
+  data: {}
+  # SEALED_ENV_VAR: ""
+  # appsettings.json: ""
+# kong:
+#   plugins:
+#     - name: myheader
+#       plugin: myheader
+#       config: 
+#         header_value: "my first plugin"
+ingress:
+  enabled: true
+  # className: "kong"
+  annotations:
+    kubernetes.io/ingress.class: kong
+    # konghq.com/strip-path: "true"
+    # konghq.com/plugins: myheader
+    # ingress.kubernetes.io/service-upstream: "true"
+  hosts:
+    - paths:
+        - path: /ganamovil-bff/
+          pathType: Prefix # Prefix | ImplementationSpecific
+      host: bg-gnm-dev.eastus.cloudapp.azure.com
+tls:
+  enabled: false
+  # certs:
+  #   - hosts:
+  #       - host: ngm-stg.bg.com.bo
+  #     secretName: ganamovil-release-tls
