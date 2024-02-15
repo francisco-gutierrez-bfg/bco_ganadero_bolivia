@@ -4,7 +4,7 @@ metadata:
   name: kong
   namespace: argocd
 spec:
-  project: helm-charts
+  project: default
   source:
     chart: kong
     repoURL: https://charts.konghq.com
@@ -12,20 +12,34 @@ spec:
     helm:
       releaseName: bg-kong
       parameters:
-        - name: "replicaCount"
-          value: "3"
-        - name: "autoscaling.enabled"
-          value: "false"
+        ## Community
         - name: "image.repository"
           value: "revomatico/docker-kong-oidc"
         - name: "image.tag"
           value: "3.3.0-1"
+ 
+        ## Enterprise
+        # - name: "enterprise.enabled"
+        #   value: true
+        # - name: "image.repository"
+        #   value: kong/kong-gateway
+        # - name: "image.tag"
+        #   value: "3.3"
+        # - name: "enterprise.license_secret"
+        #   value: "kong-enterprise-license"
+ 
+        ## Common
+        - name: "replicaCount"
+          value: "3"
+        - name: "autoscaling.enabled"
+          value: "false"
         - name: "proxy.type"
           value: "LoadBalancer"
         - name: "env.PLUGINS"
           value: "bundled,oidc"
         - name: "env.LOG_LEVEL"
           value: "info"
+ 
   destination:
     server: https://kubernetes.default.svc
     namespace: kong
