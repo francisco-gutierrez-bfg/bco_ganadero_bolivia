@@ -1,7 +1,7 @@
 keycloak:
   version: "22.0.1"
   db:
-    size: "10Gi"
+    size: "Gi"
 
 postgres:
   instances: 
