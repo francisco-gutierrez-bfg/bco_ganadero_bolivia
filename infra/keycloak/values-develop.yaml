@@ -4,7 +4,7 @@ keycloak:
     size: "10Gi"
 
 postgres:
-  instances: 3
+  instances: 
 
 ingress:
   domain: "kong.test"  # Replace with your domain
