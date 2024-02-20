@@ -1,10 +1,10 @@
 keycloak:
   version: "22.0.1"
   db:
-    size: "Gi"
+    size: "5Gi"
 
 postgres:
-  instances: 
+  instances: 1
 
 ingress:
   domain: "kong.test"  # Replace with your domain
