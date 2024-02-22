@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kong
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: kong
+    repoURL: https://charts.konghq.com
+    targetRevision: 2.25.0
+    helm:
+      releaseName: bg-kong
+      parameters:
+        ## Enterprise
+        - name: "enterprise.enabled"
+          value: true
+        - name: "image.repository"
+          value: kong/kong-gateway
+        - name: "image.tag"
+          value: "3.3"
+        - name: "enterprise.license_secret"
+          value: "kong-enterprise-license"
+        - name: "replicaCount"
+          value: "3"
+        - name: "autoscaling.enabled"
+          value: "false"
+        - name: "proxy.type"
+          value: "LoadBalancer"
+        - name: "env.PLUGINS"
+          value: "bundled,oidc"
+        - name: "env.LOG_LEVEL"
+          value: "info"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kong
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true
+# Inclusión de valores para utilización de version Enterprise
+# Antes de ejecutar el deployment debemos crear el secret correspondiente.
+# Para ello, es necesario contar con la licencia respectiva desde un json file entregado por el proveedor
+#
+# Ejemplo de lincencia en formato JSON, el siguiente ejemplo no constituye una licencia valida
+# 
+# {
+#    "license": {
+#        "signature": "LS0tLS1CRUdJTiBQR1AgTUVTU0FHRS0tLS0tClZlcnNpb246IEdudVBHIHYyCgpvd0did012TXdDSFdzMTVuUWw3dHhLK01wOTJTR0tLWVc3UU16WTBTVTVNc2toSVREWk1OTFEzVExJek1MY3dTCjA0ek1UVk1OREEwc2pRM04wOHpNalZKVHpOTE1EWk9TVTFLTXpRMVRVNHpTRXMzTjA0d056VXdUTytKWUdNUTQKR05oWW1VQ21NWEJ4Q3NDc3lMQmorTVBmOFhyWmZkNkNqVnJidmkyLzZ6THhzcitBclZtcFZWdnN1K1NiKzFhbgozcjNCeUxCZzdZOVdFL2FYQXJ0NG5lcmVpa2tZS1ozMlNlbGQvMm5iYkRzcmdlWFQzek1BQUE9PQo9b1VnSgotLS0tLUVORCBQR1AgTUVTU0FHRS0tLS0tCg=",
+#        "payload": {
+#            "customer": "Test Company Inc",
+#            "license_creation_date": "2017-11-08",
+#            "product_subscription": "Kong Enterprise",
+#            "admin_seats": "5",
+#            "support_plan": "None",
+#            "license_expiration_date": "2017-11-10",
+#            "license_key": "00141000017ODj3AAG_a1V41000004wT0OEAU"
+#        },
+#        "version": 1
+#    }
+#}
+#
+# Ejemplo de creación de secret con el contenido del archivo JSON de licenciamiento
+# Ejemplo:
+# kubectl create secret generic kong-enterprise-license --from-file=license=./license.json
